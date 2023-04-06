@@ -1,4 +1,4 @@
-package com.masterhaxixu;
+package com.masterhaxixu.litebanswebhook;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.awt.Color;

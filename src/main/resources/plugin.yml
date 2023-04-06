@@ -1,14 +1,14 @@
 name: LiteBansWebhook
 version: 1.0
-main: com.masterhaxixu.Main
+main: com.masterhaxixu.litebanswebhook.LiteBansWebhook
 commands:
  litebanswebhook:
      description: Reloads plugin
      usage: /litebanswebhook
      permission: litebanswebook.reload
 permissions:
-litebanswebook.reload:
-    description: Permission to reload plugin
-    default: op
+  litebanswebook.reload:
+      description: Permission to reload plugin
+      default: op
 api-version: 1.18
 depend: [LiteBans]
