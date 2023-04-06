@@ -26,7 +26,6 @@ public class LiteBansWebhook extends JavaPlugin {
          if (getConfig().getString("webhookurl").equals("WEBHOOK_URL") || getConfig().getString("webhookurl").isEmpty()) {
              this.getLogger().warning("No webhook provided in config.yml. Disabling...");
              this.getServer().getPluginManager().disablePlugin(this);
-             return;
          }
         registerEvents();
         this.getCommand("litebanswebhook").setExecutor(new ReloadCommand(this));
