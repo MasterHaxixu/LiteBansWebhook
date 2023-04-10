@@ -1,32 +1,37 @@
 package com.masterhaxixu.litebanswebhook;
 
-import java.awt.Color;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 import com.masterhaxixu.litebanswebhook.commands.ReloadCommand;
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.Listener;
-import org.bukkit.plugin.java.JavaPlugin;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClients;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
 import litebans.api.Database;
 import litebans.api.Entry;
 import litebans.api.Events;
 
 public class LiteBansWebhook extends JavaPlugin {
 
-
     @Override
     public void onEnable() {
         saveDefaultConfig();
-         if (getConfig().getString("webhookurl").equals("WEBHOOK_URL") || getConfig().getString("webhookurl").isEmpty()) {
-             this.getLogger().warning("No webhook provided in config.yml. Disabling...");
-             this.getServer().getPluginManager().disablePlugin(this);
-         }
+        JsonChecker.checkFiles(getDataFolder().getAbsolutePath());
+        if (getConfig().getString("webhookurl").equals("WEBHOOK_URL")
+                || getConfig().getString("webhookurl").isEmpty()) {
+            this.getLogger().warning("No webhook provided in config.yml. Disabling...");
+            this.getServer().getPluginManager().disablePlugin(this);
+        }
+        getLogger().info("Plugin Enabled!");
         registerEvents();
         this.getCommand("litebanswebhook").setExecutor(new ReloadCommand(this));
     }
@@ -46,111 +51,158 @@ public class LiteBansWebhook extends JavaPlugin {
     }
 
     private void entryRemoved(Entry entry) {
-        String p = getPlayerName(entry.getUuid());
-        DiscordWebhook webhook = new DiscordWebhook(getConfig().getString("webhookurl"));
-        String desc;
-        switch (entry.getType()) {
-            case "ban":
-                desc = "The player `" + p + "` was unbanned by `" + entry.getExecutorName()
-                        + "` for `" + entry.getReason() + "`";
-                break;
-            case "mute":
-                desc = "The player `" + p + "` was unmuted by `" + entry.getExecutorName()
-                        + "` for `" + entry.getReason() + "`";
-                break;
-            default:
-                desc = "";
-        }
-        webhook.addEmbed(new DiscordWebhook.EmbedObject()
-                .setTitle("Punishment Revoked ✅")
-                .setDescription(desc)
-                .setColor(new Color(50,205,50))
-                .setFooter("Powered by LiteBans Webhook", null));
-
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            try {
-                webhook.execute();
-            } catch (IOException e) {
-                this.getLogger().severe("Failed to send notification. Is the webhook valid?");
+        try {
+            String p = getPlayerName(entry.getUuid());
+            String json;
+            StringEntity params;
+            HttpClient httpClient = HttpClients.createDefault();
+            HttpPost request = new HttpPost(getConfig().getString("webhookurl"));
+            request.setHeader("Content-type", "application/json");
+            switch (entry.getType()) {
+                case "ban":
+                    json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ban-remove.json")));
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    if (entry.getReason() == null)
+                        json = json.replace("REASON", "No Reason Provided");
+                    else
+                        json = json.replace("REASON", entry.getReason());
+                    params = new StringEntity(json);
+                    request.setEntity(params);
+                    break;
+                case "mute":
+                    json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/mute-remove.json")));
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    if (entry.getReason() == null)
+                        json = json.replace("REASON", "No Reason Provided");
+                    else
+                        json = json.replace("REASON", entry.getReason());
+                    params = new StringEntity(json);
+                    request.setEntity(params);
+                    break;
+                case "warn":
+                    json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/warn-remove.json")));
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    if (entry.getReason() == null)
+                        json = json.replace("REASON", "No Reason Provided");
+                    else
+                        json = json.replace("REASON", entry.getReason());
+                    params = new StringEntity(json);
+                    request.setEntity(params);
+                    break;
             }
-        });
+
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                try {
+                    httpClient.execute(request);
+                } catch (IOException e) {
+                    this.getLogger().severe("Failed to send notification. Is the webhook valid?");
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void entryAdded(Entry entry) {
-        String p = getPlayerName(entry.getUuid());
-        String desc;
-        java.awt.Color color;
-        DiscordWebhook webhook = new DiscordWebhook(getConfig().getString("webhookurl"));
-        switch (entry.getType()) {
-            case "ban":
-                color = java.awt.Color.RED;
-                if (entry.isIpban()) {
-                    if (entry.isPermanent()) {
-                        desc = "The player `" + p + "` was ip-banned by `" + entry.getExecutorName()
-                                + "` for `" + entry.getReason() + "`";
+        try {
+            String p = getPlayerName(entry.getUuid());
+            String json;
+            StringEntity params;
+            HttpClient httpClient = HttpClients.createDefault();
+            HttpPost request = new HttpPost(getConfig().getString("webhookurl"));
+            request.setHeader("Content-type", "application/json");
+            switch (entry.getType()) {
+                case "ban":
+                    if (entry.isIpban()) {
+                        json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ipban-added.json")));
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        if (entry.getReason() == null)
+                            json = json.replace("REASON", "No Reason Provided");
+                        else
+                            json = json.replace("REASON", entry.getReason());
+                        if (!entry.isPermanent())
+                            json = json.replace("DURATION", getDurationString(entry.getDuration()));
+                        else
+                            json = json.replace("DURATION", "");
+                        params = new StringEntity(json);
+                        request.setEntity(params);
                     } else {
-                        desc = "The player `" + p + "` was temporarily ip-banned by `"
-                                + entry.getExecutorName() + "` for `" + entry.getReason() + "`,duration `"
-                                + getDurationString(entry.getDuration()) + "`";
-                    }
-                } else {
-                    if (entry.isPermanent()) {
-                        desc = "The player `" + p + "` was banned by `" + entry.getExecutorName()
-                                + "` for `" + entry.getReason() + "`";
-                    } else {
-                        desc = "The player `" + p + "` was temporarily banned by `"
-                                + entry.getExecutorName() + "` for `" + entry.getReason() + "`,duration `"
-                                + getDurationString(entry.getDuration()) + "`";
-                    }
-                }
-                break;
-            case "kick":
-                color = java.awt.Color.ORANGE;
-                if (entry.getReason() == null || entry.getReason().isEmpty()) {
-                    desc = "The player `" + p + "` was kicked by `" + entry.getExecutorName() + "` for `No reason specified.`";
-                } else {
-                    desc = "The player `" + p + "` was kicked by `" + entry.getExecutorName() + "` for `" + entry.getReason() + "`.";
-                }
-                break;
-            case "mute":
-                color = new Color(135,206,250);
-                if (entry.isIpban()) {
-                    if (entry.isPermanent()) {
-                        desc = "The player `" + p + "` was ip-muted by `" + entry.getExecutorName()
-                                + "` for `" + entry.getReason() + "`";
-                    } else {
-                        desc = "The player `" + p + "` was temporarily ip-muted by `"
-                                + entry.getExecutorName() + "` for `" + entry.getReason() + "`,duration `"
-                                + getDurationString(entry.getDuration()) + "`";
-                    }
-                } else {
-                    if (entry.isPermanent()) {
-                        desc = "The player `" + p + "` was muted by `" + entry.getExecutorName()
-                                + "` for `" + entry.getReason() + "`";
-                    } else {
-                        desc = "The player `" + p + "` was temporarily muted by `"
-                                + entry.getExecutorName() + "` for `" + entry.getReason() + "`,duration `"
-                                + getDurationString(entry.getDuration()) + "`";
-                    }
-                }
-                break;
-            default:
-                desc = "";
-                color = java.awt.Color.RED;
-        }
-        webhook.addEmbed(new DiscordWebhook.EmbedObject()
-                .setTitle("New Punishment ⏲️")
-                .setDescription(desc)
-                .setColor(color)
-                .setFooter("Powered by LiteBans Webhook", null));
+                        json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ban-added.json")));
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        if (entry.getReason() == null)
+                            json = json.replace("REASON", "No Reason Provided");
+                        else
+                            json = json.replace("REASON", entry.getReason());
+                        if (!entry.isPermanent())
+                            json = json.replace("DURATION", getDurationString(entry.getDuration()));
+                        else
+                            json = json.replace("DURATION", "");
+                        params = new StringEntity(json);
+                        request.setEntity(params);
 
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            try {
-                webhook.execute();
-            } catch (IOException e) {
-                this.getLogger().severe("Failed to send notification. Is the webhook valid?");
+                    }
+                    break;
+                case "kick":
+                    json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/kick.json")));
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("REASON",
+                            entry.getReason());
+                    if (!entry.isPermanent())
+                        json = json.replace("DURATION", getDurationString(entry.getDuration()));
+                    else
+                        json = json.replace("DURATION", "");
+                    params = new StringEntity(json);
+                    request.setEntity(params);
+                    break;
+                case "mute":
+                    if (entry.isIpban()) {
+                        json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ipmute-added.json")));
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        if (entry.getReason() == null)
+                            json = json.replace("REASON", "No Reason Provided");
+                        else
+                            json = json.replace("REASON", entry.getReason());
+                        if (!entry.isPermanent())
+                            json = json.replace("DURATION", getDurationString(entry.getDuration()));
+                        else
+                            json = json.replace("DURATION", "");
+                        params = new StringEntity(json);
+                        request.setEntity(params);
+                    } else {
+                        json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/mute-added.json")));
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        if (entry.getReason() == null)
+                            json = json.replace("REASON", "No Reason Provided");
+                        else
+                            json = json.replace("REASON", entry.getReason());
+                        if (!entry.isPermanent())
+                            json = json.replace("DURATION", getDurationString(entry.getDuration()));
+                        else
+                            json = json.replace("DURATION", "");
+                        params = new StringEntity(json);
+                        request.setEntity(params);
+                    }
+                    break;
+                case "warn":
+                    json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/warn-added.json")));
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    if (entry.getReason() == null)
+                        json = json.replace("REASON", "No Reason Provided");
+                    else
+                        json = json.replace("REASON", entry.getReason());
+                    params = new StringEntity(json);
+                    request.setEntity(params);
             }
-        });
+
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                try {
+                    httpClient.execute(request);
+                } catch (IOException e) {
+                    this.getLogger().severe("Failed to send notification. Is the webhook valid?");
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private String getDurationString(long duration) {
@@ -163,13 +215,13 @@ public class LiteBansWebhook extends JavaPlugin {
         long seconds = TimeUnit.MILLISECONDS.toSeconds(duration);
 
         StringBuilder sb = new StringBuilder();
+        sb.append(",duration `");
         if (days > 0) {
             sb.append(days);
             sb.append(" day");
             if (days != 1) {
                 sb.append("s");
             }
-            // sb.append(" ");
         }
         if (hours > 0) {
             sb.append(hours);
@@ -177,7 +229,6 @@ public class LiteBansWebhook extends JavaPlugin {
             if (hours != 1) {
                 sb.append("s");
             }
-            // sb.append(" ");
         }
         if (minutes > 0) {
             sb.append(minutes);
@@ -185,7 +236,6 @@ public class LiteBansWebhook extends JavaPlugin {
             if (minutes != 1) {
                 sb.append("s");
             }
-            // sb.append(" ");
         }
         if (seconds > 0) {
             sb.append(seconds);
@@ -193,13 +243,12 @@ public class LiteBansWebhook extends JavaPlugin {
             if (seconds != 1) {
                 sb.append("s");
             }
-            // sb.append(" ");
         }
 
         if (sb.length() == 0) {
             sb.append("0 seconds");
         }
-
+        sb.append("`");
         return sb.toString();
     }
 
