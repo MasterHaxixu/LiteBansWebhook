@@ -1,0 +1,12 @@
+{
+  "embeds": [
+    {
+      "title": "New Punishment :timer:",
+      "description": "The player `${entry.name}` was ip-muted by `${entry.executorName}` for `${entry.reason}` ${entry.duration}",
+      "color": "8900346",
+      "footer": {
+        "text": "Powered by LiteBans Webhook"
+      }
+    }
+  ]
+}
