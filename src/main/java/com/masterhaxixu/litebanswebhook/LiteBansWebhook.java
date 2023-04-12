@@ -96,8 +96,6 @@ public class LiteBansWebhook extends JavaPlugin {
             HttpClient httpClient = HttpClients.createDefault();
             HttpPost request = new HttpPost(getConfig().getString("webhookurl"));
             request.setHeader("Content-type", "application/json");
-            this.getLogger().info(entry.getType());
-            this.getLogger().info(embeds.get(entry.getType().toLowerCase() + (entry.isIpban() ? "-ip" : "") + "-removed"));
             request.setEntity(new StringEntity(parseString(entry, embeds.get(entry.getType().toLowerCase() + "-removed"))));
             Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                 try {
@@ -117,8 +115,7 @@ public class LiteBansWebhook extends JavaPlugin {
             HttpPost request = new HttpPost(getConfig().getString("webhookurl"));
             request.setHeader("Content-type", "application/json");
             request.setEntity(new StringEntity(parseString(entry, embeds.get(entry.getType().toLowerCase() + (entry.isIpban() ? "-ip" : "") + "-added"))));
-            this.getLogger().info(entry.getType());
-
+            
             Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                 try {
                     httpClient.execute(request);
