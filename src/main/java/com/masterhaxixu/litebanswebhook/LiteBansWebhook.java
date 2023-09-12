@@ -61,7 +61,7 @@ public class LiteBansWebhook extends JavaPlugin {
             switch (entry.getType()) {
                 case "ban":
                     json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ban-remove.json")));
-                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                     if (entry.getReason() == null)
                         json = json.replace("REASON", "No Reason Provided");
                     else
@@ -71,7 +71,7 @@ public class LiteBansWebhook extends JavaPlugin {
                     break;
                 case "mute":
                     json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/mute-remove.json")));
-                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                     if (entry.getReason() == null)
                         json = json.replace("REASON", "No Reason Provided");
                     else
@@ -81,7 +81,7 @@ public class LiteBansWebhook extends JavaPlugin {
                     break;
                 case "warn":
                     json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/warn-remove.json")));
-                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                     if (entry.getReason() == null)
                         json = json.replace("REASON", "No Reason Provided");
                     else
@@ -115,7 +115,7 @@ public class LiteBansWebhook extends JavaPlugin {
                 case "ban":
                     if (entry.isIpban()) {
                         json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ipban-added.json")));
-                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                         if (entry.getReason() == null)
                             json = json.replace("REASON", "No Reason Provided");
                         else
@@ -128,7 +128,7 @@ public class LiteBansWebhook extends JavaPlugin {
                         request.setEntity(params);
                     } else {
                         json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ban-added.json")));
-                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                         if (entry.getReason() == null)
                             json = json.replace("REASON", "No Reason Provided");
                         else
@@ -145,7 +145,7 @@ public class LiteBansWebhook extends JavaPlugin {
                 case "kick":
                     json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/kick.json")));
                     json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("REASON",
-                            entry.getReason());
+                            entry.getReason()).replace("SERVER", entry.getServerOrigin());
                     if (!entry.isPermanent())
                         json = json.replace("DURATION", getDurationString(entry.getDuration()));
                     else
@@ -156,7 +156,7 @@ public class LiteBansWebhook extends JavaPlugin {
                 case "mute":
                     if (entry.isIpban()) {
                         json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/ipmute-added.json")));
-                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                         if (entry.getReason() == null)
                             json = json.replace("REASON", "No Reason Provided");
                         else
@@ -169,7 +169,7 @@ public class LiteBansWebhook extends JavaPlugin {
                         request.setEntity(params);
                     } else {
                         json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/mute-added.json")));
-                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                        json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                         if (entry.getReason() == null)
                             json = json.replace("REASON", "No Reason Provided");
                         else
@@ -184,7 +184,7 @@ public class LiteBansWebhook extends JavaPlugin {
                     break;
                 case "warn":
                     json = new String(Files.readAllBytes(Paths.get(getDataFolder().getAbsolutePath()+"/embeds/warn-added.json")));
-                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName());
+                    json = json.replace("PLAYER", p).replace("EXECUTOR", entry.getExecutorName()).replace("SERVER", entry.getServerOrigin());
                     if (entry.getReason() == null)
                         json = json.replace("REASON", "No Reason Provided");
                     else
