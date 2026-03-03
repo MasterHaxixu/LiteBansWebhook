@@ -1,0 +1,12 @@
+{
+  "embeds": [
+    {
+      "title": "Warning Revoked :white_check_mark:",
+      "description": "The player `${entry.name}` was unwarned by `${entry.executorName}` for `${entry.reason}`",
+      "color": "3329330",
+      "footer": {
+        "text": "Powered by LiteBans Webhook"
+      }
+    }
+  ]
+}
