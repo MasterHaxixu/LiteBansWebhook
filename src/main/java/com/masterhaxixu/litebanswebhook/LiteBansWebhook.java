@@ -2,6 +2,7 @@ package com.masterhaxixu.litebanswebhook;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,13 +22,23 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.masterhaxixu.litebanswebhook.commands.ReloadCommand;
 
+import dev.faststats.bukkit.BukkitMetrics;
+import dev.faststats.core.ErrorTracker;
+import dev.faststats.core.Metrics;
 import litebans.api.Database;
 import litebans.api.Entry;
 import litebans.api.Events;
 
 public class LiteBansWebhook extends JavaPlugin {
-    private List<String> punishmentTypes = Arrays.asList("ban-added", "ban-removed", "ban-ip-added", "mute-ip-added", "kick-added", "mute-added", "mute-removed", "warn-added", "warn-removed");
-    private Map<String, String> embeds = new HashMap<>();
+
+    private final List<String> punishmentTypes = Arrays.asList("ban-added", "ban-removed", "ban-ip-added", "mute-ip-added", "kick-added", "mute-added", "mute-removed", "warn-added", "warn-removed");
+    private final Map<String, String> embeds = new HashMap<>();
+    public static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware();
+    private final Metrics metrics = BukkitMetrics.factory()
+            .token("b123e9a18ea7a6a369423174478f327d")
+            .errorTracker(ERROR_TRACKER)
+            .create(this);
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -39,6 +50,12 @@ public class LiteBansWebhook extends JavaPlugin {
         }
         registerEvents();
         this.getCommand("litebanswebhook").setExecutor(new ReloadCommand(this));
+        metrics.ready();
+    }
+
+    @Override
+    public void onDisable() {
+        metrics.shutdown();
     }
 
     public void reloadEmbeds() {
@@ -56,7 +73,6 @@ public class LiteBansWebhook extends JavaPlugin {
             }
         }
     }
-
 
     private String parseString(Entry entry, String message) {
         return message.replaceAll("\\$\\{entry\\.id\\}", String.valueOf(entry.getId()))
@@ -107,7 +123,7 @@ public class LiteBansWebhook extends JavaPlugin {
                     this.getLogger().severe("Failed to send notification. Is the webhook valid?");
                 }
             });
-        } catch (Exception e) {
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             e.printStackTrace();
         }
     }
@@ -118,7 +134,7 @@ public class LiteBansWebhook extends JavaPlugin {
             HttpPost request = new HttpPost(getConfig().getString("webhookurl"));
             request.setHeader("Content-type", "application/json");
             request.setEntity(new StringEntity(parseString(entry, embeds.get(entry.getType().toLowerCase() + (entry.isIpban() ? "-ip" : "") + "-added"))));
-            
+
             Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                 try {
                     httpClient.execute(request);
@@ -126,7 +142,7 @@ public class LiteBansWebhook extends JavaPlugin {
                     this.getLogger().severe("Failed to send notification. Is the webhook valid?");
                 }
             });
-        } catch (Exception e) {
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             e.printStackTrace();
         }
     }
@@ -188,19 +204,16 @@ public class LiteBansWebhook extends JavaPlugin {
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
                     String str = rs.getString(1);
-                    if (stmt != null)
-                        stmt.close();
+                    stmt.close();
                     return str;
                 }
-                if (stmt != null)
+                stmt.close();
+            } catch (SQLException throwable) {
+                try {
                     stmt.close();
-            } catch (Throwable throwable) {
-                if (stmt != null)
-                    try {
-                        stmt.close();
-                    } catch (Throwable throwable1) {
-                        throwable.addSuppressed(throwable1);
-                    }
+                } catch (SQLException throwable1) {
+                    throwable.addSuppressed(throwable1);
+                }
                 throw throwable;
             }
         } catch (SQLException e) {

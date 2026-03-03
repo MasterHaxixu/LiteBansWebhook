@@ -4,10 +4,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+
 import com.masterhaxixu.litebanswebhook.LiteBansWebhook;
 
 public class ReloadCommand implements CommandExecutor {
-    private LiteBansWebhook plugin;
+    private final LiteBansWebhook plugin;
     public ReloadCommand(LiteBansWebhook pl) {
         plugin = pl;
     }
